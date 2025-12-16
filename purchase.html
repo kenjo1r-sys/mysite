@@ -1,0 +1,355 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Выбор срока покупки - SoulWare</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #000000;
+            overflow: hidden; /* чтобы не было скролла из-за канвасов */
+            <!-- index .html -->
+            <body class="index"> ... </body>
+            <!-- purchase.html -->
+            <body class="purchase"> ... </body>
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            background-color: #1f1f1f;
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #6B8E23;
+        }
+
+        nav {
+            margin-left: auto;
+            display: flex;
+            gap: 15px;
+        }
+
+            nav a {
+                color: #6B8E23;
+                text-decoration: none;
+                padding: 10px 15px;
+                background-color: #333;
+                border-radius: 4px;
+                transition: background-color 0.3s;
+            }
+
+                nav a:hover {
+                    background-color: #555;
+                }
+
+        section {
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .option {
+            padding: 15px;
+            background-color: #333;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+            .option:hover {
+                background-color: #000000;
+            }
+
+        #price-setting {
+            margin-top: 30px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            background-color: #333;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+            button:hover {
+                background-color: #000000;
+            }
+
+        /* Канвасы для линий и снега */
+        canvas#lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        canvas#snow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* --- НЕОНОВАЯ ЗЕЛЁНАЯ ПОДСВЕТКА ВСЕГО ТЕКСТА --- */
+
+        @keyframes neonPulse {
+            0%, 100% {
+                text-shadow: 0 0 5px #6B8E23, 0 0 10px #6B8E23, 0 0 20px #6B8E23;
+            }
+
+            50% {
+                text-shadow: 0 0 15px #6B8E23, 0 0 30px #6B8E23, 0 0 50px #6B8E23;
+            }
+        }
+
+        body, h1, h2, h3, h4, h5, h6,
+        p, button, .logo, a, span, div {
+            animation: neonPulse 2s infinite;
+            color: #6B8E23; /* светло-зеленый текст для лучшего неона */
+        }
+    </style>
+</head>
+<body>
+
+
+    <!-- Канвас для линий -->
+    <canvas id="lines"></canvas>
+    <!-- Канвас для снега -->
+    <canvas id="snow"></canvas>
+
+    <header>
+        <div class="logo">SoulWare</div>
+        <nav>
+            <a href="index.html">Главная</a>
+            <a href="review.html">Обзор</a>
+        </nav>
+    </header>
+
+    <section>
+        <h2>Выберите срок покупки</h2>
+        <div class="options">
+            <div class="option" data-days="1" data-price="100">1 день = 100₽</div>
+            <div class="option" data-days="3" data-price="250">3 дня = 250₽</div>
+            <div class="option" data-days="7" data-price="500">7 дней = 500₽</div>
+            <div class="option" data-days="30" data-price="1000">30 дней = 1000₽</div>
+        </div>
+
+
+
+
+
+        <button id="buyButton">Оформить покупку</button>
+        <button id="downloadFree">Download Free Version</button>
+    </section>
+
+    <script>
+        // Обработка выбора срока
+        let selectedDays = 1;
+        const options = document.querySelectorAll('.option');
+        const priceInput = document.getElementById('price');
+
+        options.forEach(option => {
+            option.addEventListener('click', () => {
+                selectedDays = option.getAttribute('data-days');
+                const price = option.getAttribute('data-price');
+                // Обновляем поле цены
+                document.getElementById('price').value = price;
+                // Визуальный эффект выбора
+                options.forEach(opt => opt.style.backgroundColor = '#333');
+                option.style.backgroundColor = '#556B2F';
+            });
+        });
+
+
+
+        // --- Линии, соединяющие точки (ломаные) ---
+        const linesCanvas = document.getElementById('lines');
+        const ctxLines = linesCanvas.getContext('2d');
+
+        let points = [];
+
+        function resizeLinesCanvas() {
+            linesCanvas.width = window.innerWidth;
+            linesCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeLinesCanvas);
+        resizeLinesCanvas();
+
+        class Point {
+            constructor() {
+                this.x = Math.random() * linesCanvas.width;
+                this.y = Math.random() * linesCanvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.originalX = this.x;
+                this.originalY = this.y;
+                this.angle = Math.random() * Math.PI * 2;
+                this.phaseSpeed = 0.01 + Math.random() * 0.02;
+            }
+            update() {
+                this.angle += this.phaseSpeed;
+                this.x += Math.cos(this.angle) * 0.3;
+                this.y += Math.sin(this.angle) * 0.3;
+
+                const dx = this.originalX - this.x;
+                const dy = this.originalY - this.y;
+                this.x += dx * 0.01;
+                this.y += dy * 0.01;
+
+                if (this.x < 0 || this.x > linesCanvas.width) this.vx = -this.vx;
+                if (this.y < 0 || this.y > linesCanvas.height) this.vy = -this.vy;
+            }
+            draw() {
+                ctxLines.fillStyle = '#556B2F';
+                ctxLines.beginPath();
+                ctxLines.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctxLines.fill();
+            }
+        }
+
+        function initPoints() {
+            points = [];
+            for (let i = 0; i < 100; i++) {
+                points.push(new Point());
+            }
+        }
+
+        function drawBrokenLines() {
+            ctxLines.clearRect(0, 0, linesCanvas.width, linesCanvas.height);
+            // соединяем точки ломаными линиями
+            for (let i = 0; i < points.length; i++) {
+                let p1 = points[i];
+                for (let j = i + 1; j < points.length; j++) {
+                    let p2 = points[j];
+                    const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                    if (dist < 150) {
+                        ctxLines.strokeStyle = `rgba(0,100,0,${1 - dist / 150})`;
+                        ctxLines.lineWidth = 1;
+                        ctxLines.beginPath();
+                        ctxLines.moveTo(p1.x, p1.y);
+                        // ломанная соединяет точки через промежуточные точки
+                        ctxLines.lineTo(p2.x, p2.y);
+                        ctxLines.stroke();
+                    }
+                }
+            }
+            // обновляем и рисуем точки
+            for (let p of points) {
+                p.update();
+                p.draw();
+            }
+        }
+
+        function animateBrokenLines() {
+            drawBrokenLines();
+            requestAnimationFrame(animateBrokenLines);
+        }
+
+        initPoints();
+        animateBrokenLines();
+
+        // --- Снег, если нужен, тоже можно оставить ---
+        const snowCanvas = document.getElementById('snow');
+        const ctxSnow = snowCanvas.getContext('2d');
+
+        let snowParticles = [];
+        const maxSnowParticles = 200;
+
+        function resizeSnowCanvas() {
+            snowCanvas.width = window.innerWidth;
+            snowCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeSnowCanvas);
+        resizeSnowCanvas();
+
+        class SnowParticle {
+            constructor() {
+                this.x = Math.random() * snowCanvas.width;
+                this.y = Math.random() * snowCanvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 + 0.5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.y > snowCanvas.height) {
+                    this.y = 0;
+                    this.x = Math.random() * snowCanvas.width;
+                }
+                if (this.x > snowCanvas.width || this.x < 0) {
+                    this.speedX = -this.speedX;
+                }
+            }
+            draw() {
+                ctxSnow.fillStyle = '#556B2F';
+                ctxSnow.beginPath();
+                ctxSnow.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctxSnow.fill();
+            }
+        }
+
+        function initSnow() {
+            snowParticles = [];
+            for (let i = 0; i < maxSnowParticles; i++) {
+                snowParticles.push(new SnowParticle());
+            }
+        }
+
+        function animateSnow() {
+            ctxSnow.clearRect(0, 0, snowCanvas.width, snowCanvas.height);
+            for (let p of snowParticles) {
+                p.update();
+                p.draw();
+            }
+            requestAnimationFrame(animateSnow);
+        }
+
+        initSnow();
+        animateSnow();
+
+    </script>
+</body>
+</html>
